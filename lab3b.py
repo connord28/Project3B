@@ -158,19 +158,21 @@ def main():
    #check duplicates
    for line in Inodes:
       #for checking unallocated node not in list
+      #print(line)
       Ifrees.add(int(line[1]))
-      for i in range(0, 15):
-         blockNum = int(line[12+i])
-         if blockNum != 0 and blockNum in referencedBlocks:
-            if referencedBlocks[blockNum] > 1:
-               if i < 12:
-                  print("DUPLICATE BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET " + str(i))
-               elif i == 12:
-                  print("DUPLICATE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 12")
-               elif i == 13:
-                  print("DUPLICATE DOUBLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 268")
-               elif i == 14:
-                  print("DUPLICATE TRIPLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 65804")
+      if line[2] != 's':
+         for i in range(0, 15):
+            blockNum = int(line[12+i])
+            if blockNum != 0 and blockNum in referencedBlocks:
+               if referencedBlocks[blockNum] > 1:
+                  if i < 12:
+                     print("DUPLICATE BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET " + str(i))
+                  elif i == 12:
+                     print("DUPLICATE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 12")
+                  elif i == 13:
+                     print("DUPLICATE DOUBLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 268")
+                  elif i == 14:
+                     print("DUPLICATE TRIPLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 65804")
 
    #check for unallocated Inodes
    for i in range(firstNonReservedInode, numInodes+1):

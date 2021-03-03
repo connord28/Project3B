@@ -70,7 +70,7 @@ def main():
          Ifrees.remove(int(line[1]))
       #Ifrees.add(int(line[1]))
       linkCounts.update({int(line[1]): int(line[6])}) 
-      if line[2] != "s":
+      if line[2] != "s" or int(line[10]) >= 60:
          for i in range(0, 15):
             blockNum = int(line[12+i])
             #occupiedBlocks.add(blockNum)
@@ -160,7 +160,7 @@ def main():
       #for checking unallocated node not in list
       #print(line)
       Ifrees.add(int(line[1]))
-      if line[2] != 's':
+      if line[2] != 's' or int(line[10]) >= 60:
          for i in range(0, 15):
             blockNum = int(line[12+i])
             if blockNum != 0 and blockNum in referencedBlocks:

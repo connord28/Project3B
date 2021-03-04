@@ -19,6 +19,7 @@ linksFound = dict([])
 childParentDirs = dict([])
 
 def main():
+   inconsistencyFound = False
    if len(sys.argv) != 2:
       sys.stderr.write("please use one and only one argument")
       exit(1)
@@ -61,12 +62,43 @@ def main():
                referencedBlocks[int(line[5])] += 1
             else:
                referencedBlocks[int(line[5])] = 1
+            
   
+   #indirects check
+   for line in Indirects:
+      blockNum = int(line[5])
+      #print(blockNum)
+      level = int(line[2])
+      #check for invalid          
+      if blockNum < 0 or blockNum > maxBlockNum:
+         print("test")
+         if level == 1:
+            print("INVALID INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 12")
+            inconsistencyFound = True
+         elif level == 2:
+            print("INVALID DOUBLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 268")
+            inconsistencyFound = True
+         elif level == 3:
+            print("INVALID TRIPLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 65804") 
+            inconsistencyFound = True
+         #Check for reserved
+      if blockNum != 0 and blockNum < reserved:
+         if level == 1:
+            print("RESERVED INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 12")
+            inconsistencyFound = True
+         elif level == 2:
+            print("RESERVED DOUBLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 268")
+            inconsistencyFound = True
+         elif level == 3:
+            print("RESERVED TRIPLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 65804")  
+            inconsistencyFound = True
+
    #Inode part
    for line in Inodes:
       #might have to check if the mode is 0 of the inodes
       if int(line[1]) in Ifrees:
          print("ALLOCATED INODE " + line[1] + " ON FREELIST")
+         inconsistencyFound = True
          Ifrees.remove(int(line[1]))
       #Ifrees.add(int(line[1]))
       linkCounts.update({int(line[1]): int(line[6])}) 
@@ -83,27 +115,36 @@ def main():
             if blockNum < 0 or blockNum > maxBlockNum:
                if i < 12:
                   print("INVALID BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET " + str(i))
+                  inconsistencyFound = True
                elif i == 12:
                   print("INVALID INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 12")
+                  inconsistencyFound = True
                elif i == 13:
                   print("INVALID DOUBLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 268")
+                  inconsistencyFound = True
                elif i == 14:
                   print("INVALID TRIPLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 65804") 
+                  inconsistencyFound = True
             #Check for reserved
             if blockNum != 0 and blockNum < reserved:
                if i < 12:
                   print("RESERVED BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET " + str(i))
+                  inconsistencyFound = True
                elif i == 12:
                   print("RESERVED INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 12")
+                  inconsistencyFound = True
                elif i == 13:
                   print("RESERVED DOUBLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 268")
+                  inconsistencyFound = True
                elif i == 14:
-                  print("RESERVED TRIPLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 65804")                    
+                  print("RESERVED TRIPLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 65804")    
+                  inconsistencyFound = True                
    
    #check for allocated blocks in freelist
    for i in Bfrees:
       if i in referencedBlocks:
          print("ALLOCATED BLOCK " + str(i) + " ON FREELIST")
+         inconsistencyFound = True
       else: 
          #print(i)
          referencedBlocks[i] = 1
@@ -114,6 +155,7 @@ def main():
       if not int(i) in referencedBlocks:
          r = 0
          print("UNREFERENCED BLOCK " + str(i))
+         inconsistencyFound = True
          #print(referencedBlocks[i])
 
    #directory part
@@ -123,13 +165,16 @@ def main():
          linksFound[inodeNum] += 1
       else:
          linksFound.update({inodeNum : 1})
-      if inodeNum < 0 or inodeNum > numInodes:
+      if inodeNum < 1 or inodeNum > numInodes:
          print("DIRECTORY INODE " + line[1] + " NAME " + line[6] + " INVALID INODE " + str(inodeNum))
+         inconsistencyFound = True
       #might have to check the inodes and if it has mode == 0
       elif inodeNum in Ifrees:
          print("DIRECTORY INODE " + line[1] + " NAME " + line[6] + " UNALLOCATED INODE " + str(inodeNum))
+         inconsistencyFound = True
       elif line[6] == "'.'" and int(line[1]) != inodeNum:
          print("DIRECTORY INODE " + line[1] + " NAME " + line[6] + " LINK TO INODE " + str(inodeNum) + " SHOULD BE " + line[1])
+         inconsistencyFound = True
       elif line[6] != "'.'" and line[6] != "'..'" :
          #print(str(inodeNum) + " " + line[1])
          childParentDirs.update({int(inodeNum) : int(line[1])})
@@ -146,15 +191,19 @@ def main():
             #print(str(childParentDirs[int(line[1])]) + " " + line[3])
             if childParentDirs[int(line[1])] != int(line[3]):
                print("DIRECTORY INODE " + line[1] + " NAME " + line[6] + " LINK TO INODE " + line[3] + " SHOULD BE " + str(childParentDirs[int(line[1])]))
+               inconsistencyFound = True
          elif int(line[3]) != 2:
             print("DIRECTORY INODE " + line[1] + " NAME " + line[6] + " LINK TO INODE " + line[3] + " SHOULD BE 2")
+            inconsistencyFound = True
 
    #check for numLinks
    for node in linkCounts:
       if not node in linksFound:
          print("INODE " + str(node) + " HAS 0 LINKS BUT LINKCOUNT IS " + str(linkCounts[node]))
+         inconsistencyFound = True
       elif linkCounts[node] != linksFound[node]:
          print("INODE " + str(node) + " HAS " + str(linksFound[node]) + " LINKS BUT LINKCOUNT IS " + str(linkCounts[node]))
+         inconsistencyFound = True
    #check duplicates
    for line in Inodes:
       #for checking unallocated node not in list
@@ -167,17 +216,26 @@ def main():
                if referencedBlocks[blockNum] > 1:
                   if i < 12:
                      print("DUPLICATE BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET " + str(i))
+                     inconsistencyFound = True
                   elif i == 12:
                      print("DUPLICATE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 12")
+                     inconsistencyFound = True
                   elif i == 13:
                      print("DUPLICATE DOUBLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 268")
+                     inconsistencyFound = True
                   elif i == 14:
                      print("DUPLICATE TRIPLE INDIRECT BLOCK " + str(blockNum) + " IN INODE " + line[1] + " AT OFFSET 65804")
+                     inconsistencyFound = True
 
    #check for unallocated Inodes
    for i in range(firstNonReservedInode, numInodes+1):
       if not i in Ifrees:
          print("UNALLOCATED INODE " + str(i) + " NOT ON FREELIST")
+         inconsistencyFound = True
+   
+   if inconsistencyFound:
+      exit(2)
+   exit(0)
 
 if __name__ == "__main__":
     main()

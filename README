@@ -4,7 +4,11 @@ ID: 305416912, 505416119
 
 CS 111 Project 3B Submission:
 Include Files:
-
+   lab3b.py - python program to analyze a file system summary and report on all discovered inconsistencies
+   Makefile - makefile with the following targets
+      build (default): makes a symbolic link called lab3b to lab3b.py
+      dist: makes the submission tarball
+      clean: removes the submission tarball and lab3b symbolic link
 
 
 Research Sources: We used man7.com, opengroup.org, and tutorialspoint.com to research for this project. We also used the TA discussion slides from this class.

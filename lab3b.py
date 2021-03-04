@@ -233,9 +233,10 @@ def main():
          print("UNALLOCATED INODE " + str(i) + " NOT ON FREELIST")
          inconsistencyFound = True
    
-   if inconsistencyFound:
-      exit(2)
-   exit(0)
+   #exit at the end of the function
+   if inconsistencyFound: #exit 2 if inconsistency was found
+      sys.exit(2)
+   sys.exit(0) #exit 0 if no inconsistencies were found
 
 if __name__ == "__main__":
     main()
